@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đấu Trường Giải Đố Tiếng Việt</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700;800&family=Playfair+Display:wght@800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-deep: #0f172a;
+        --bg-mid: #1e1b4b;
+        --card-surface: rgba(30, 41, 59, 0.78);
+        --card-border: rgba(148, 163, 184, 0.22);
+        --gold: #fbbf24;
+        --gold-dark: #d97706;
+        --cyan: #38bdf8;
+        --emerald: #10b981;
+        --rose: #f43f5e;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+      }
+
+      * {
+        box-sizing: border-box;
+        font-family: "Be Vietnam Pro", sans-serif;
+        user-select: none;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at top right, #312e81 0%, #0f172a 55%, #020617 100%);
+        color: var(--text-main);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      /* Hiệu ứng ánh sáng nền mềm */
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        width: 380px;
+        height: 380px;
+        border-radius: 50%;
+        filter: blur(110px);
+        z-index: 0;
+        pointer-events: none;
+      }
+      body::before {
+        background: rgba(56, 189, 248, 0.16);
+        top: -80px;
+        left: -80px;
+      }
+      body::after {
+        background: rgba(251, 191, 36, 0.14);
+        bottom: -80px;
+        right: -80px;
+      }
+
+      #confetti-canvas {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      /* Khung chính Glassmorphism */
+      .arena-frame {
+        width: 100%;
+        max-width: 860px;
+        background: var(--card-surface);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-radius: 28px;
+        border: 1px solid var(--card-border);
+        box-shadow:
+          0 25px 60px -12px rgba(0, 0, 0, 0.65),
+          inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* Header */
+      .arena-header {
+        background: linear-gradient(90deg, rgba(15, 23, 42, 0.85) 0%, rgba(49, 46, 129, 0.65) 100%);
+        padding: 18px 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--card-border);
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .brand-title {
+        font-family: "Playfair Display", serif;
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .status-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .stat-pill {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(251, 191, 36, 0.4);
+        color: #fde047;
+        padding: 7px 15px;
+        border-radius: 99px;
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: transform 0.2s;
+      }
+
+      .combo-pill {
+        border-color: rgba(244, 63, 94, 0.5);
+        color: #fda4af;
+        display: none;
+      }
+
+      .combo-pill.active {
+        display: flex;
+        animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      .icon-circle-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: 1px solid var(--card-border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-main);
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.2s;
+      }
+      .icon-circle-btn:hover {
+        background: rgba(255, 255, 255, 0.14);
+        transform: translateY(-2px);
+      }
+
+      /* Thanh tiến trình */
+      .progress-wrap {
+        background: rgba(15, 23, 42, 0.45);
+        padding: 12px 28px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 1px solid var(--card-border);
+      }
+
+      .progress-bar-bg {
+        flex: 1;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 99px;
+        overflow: hidden;
+      }
+
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #38bdf8, #818cf8, #fbbf24);
+        border-radius: 99px;
+        transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+      }
+
+      .step-counter-text {
+        font-weight: 700;
+        color: var(--cyan);
+        font-size: 14px;
+        white-space: nowrap;
+      }
+
+      /* Sân khấu chính */
+      .main-board {
+        padding: 28px 32px;
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .topic-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(56, 189, 248, 0.14);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        color: #7dd3fc;
+        padding: 6px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: 0.3px;
+      }
+
+      .shortcut-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+
+      .question-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .q-heading {
+        font-size: 21px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .speak-btn {
+        background: linear-gradient(135deg, #0284c7, #2563eb);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      .speak-btn:hover {
+        filter: brightness(1.1);
+        transform: translateY(-1px);
+      }
+      .speak-btn:active {
+        transform: translateY(1px);
+      }
+
+      /* Khung minh họa câu đố */
+      .illustration-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(251, 191, 36, 0.25);
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 155px;
+        position: relative;
+        box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.35);
+        animation: fadeSlide 0.35s ease;
+      }
+
+      /* Kiểu 1: Ô chữ khuyết */
+      .picture-word-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .big-emoji {
+        font-size: 56px;
+        line-height: 1.1;
+        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+      }
+
+      .letter-slots {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .char-tile {
+        min-width: 48px;
+        height: 54px;
+        padding: 0 12px;
+        background: rgba(30, 41, 59, 0.95);
+        border: 2px solid #475569;
+        border-radius: 12px;
+        font-size: 24px;
+        font-weight: 800;
+        color: #f8fafc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+      }
+
+      .char-tile.blank {
+        background: rgba(251, 191, 36, 0.14);
+        border: 2px dashed var(--gold);
+        color: var(--gold);
+      }
+
+      .char-tile.revealed {
+        background: rgba(16, 185, 129, 0.22);
+        border: 2px solid var(--emerald);
+        color: #6ee7b7;
+        transform: scale(1.08);
+      }
+
+      /* Kiểu 2: Ghép vế / Nối từ / Đối nghĩa */
+      .rhyme-equation {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .syllable-pill {
+        background: rgba(56, 189, 248, 0.15);
+        border: 1.5px solid rgba(56, 189, 248, 0.45);
+        color: #e0f2fe;
+        padding: 10px 20px;
+        border-radius: 14px;
+        font-size: 22px;
+      }
+
+      .syllable-result {
+        background: rgba(251, 191, 36, 0.15);
+        border: 2px dashed var(--gold);
+        color: var(--gold);
+        padding: 10px 24px;
+        border-radius: 14px;
+        font-size: 22px;
+        transition: all 0.3s ease;
+      }
+
+      .syllable-result.revealed {
+        background: rgba(16, 185, 129, 0.22);
+        border: 2px solid var(--emerald);
+        color: #6ee7b7;
+      }
+
+      /* Kiểu 3: Sắp xếp thành ngữ / câu đố chữ */
+      .sentence-blocks {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .word-chip {
+        background: rgba(99, 102, 241, 0.2);
+        border: 1.5px solid rgba(129, 140, 248, 0.5);
+        color: #e0e7ff;
+        padding: 9px 18px;
+        border-radius: 12px;
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      /* Kiểu 4: Thơ đố dân gian */
+      .riddle-poem {
+        font-size: 19px;
+        line-height: 1.7;
+        color: #fde68a;
+        text-align: center;
+        font-style: italic;
+        max-width: 560px;
+      }
+
+      /* Các thẻ lựa chọn đáp án */
+      .options-layout {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+
+      .ans-tile {
+        background: rgba(30, 41, 59, 0.85);
+        border: 1.5px solid rgba(148, 163, 184, 0.28);
+        border-radius: 16px;
+        padding: 18px 14px;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        position: relative;
+        color: var(--text-main);
+      }
+
+      .key-badge {
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-muted);
+        background: rgba(255, 255, 255, 0.07);
+        padding: 2px 7px;
+        border-radius: 6px;
+      }
+
+      .ans-tile:hover:not(:disabled) {
+        transform: translateY(-3px);
+        border-color: var(--gold);
+        background: rgba(51, 65, 85, 0.95);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+      }
+
+      .ans-tile:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .ans-main {
+        font-size: 21px;
+        font-weight: 700;
+        line-height: 1.3;
+        text-align: center;
+      }
+
+      .ans-hint {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-muted);
+        text-align: center;
+      }
+
+      .ans-tile.correct {
+        background: rgba(6, 78, 59, 0.85) !important;
+        border-color: var(--emerald) !important;
+        box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
+      }
+      .ans-tile.correct .ans-main {
+        color: #6ee7b7;
+      }
+      .ans-tile.correct .ans-hint {
+        color: #a7f3d0;
+      }
+
+      .ans-tile.wrong {
+        background: rgba(136, 19, 55, 0.75) !important;
+        border-color: var(--rose) !important;
+        animation: shake 0.35s ease;
+      }
+      .ans-tile.wrong .ans-main {
+        color: #fda4af;
+      }
+
+      /* Khu vực Trạng Nguyên phản hồi */
+      .mentor-footer {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: 16px 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        min-height: 76px;
+      }
+
+      .mentor-talk {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 15px;
+        font-weight: 500;
+        color: #e2e8f0;
+        line-height: 1.5;
+      }
+
+      .mentor-icon {
+        font-size: 34px;
+        flex-shrink: 0;
+      }
+
+      .continue-btn {
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(234, 88, 12, 0.4);
+        display: none;
+        white-space: nowrap;
+        transition: transform 0.15s, filter 0.15s;
+      }
+
+      .continue-btn:hover {
+        filter: brightness(1.08);
+        transform: translateY(-2px);
+      }
+
+      /* Màn hình Tổng Kết */
+      .end-screen {
+        display: none;
+        text-align: center;
+        padding: 46px 28px;
+        animation: fadeSlide 0.4s ease;
+      }
+
+      .trophy-big {
+        font-size: 76px;
+        margin-bottom: 10px;
+        filter: drop-shadow(0 8px 20px rgba(251, 191, 36, 0.4));
+      }
+
+      .end-heading {
+        font-family: "Playfair Display", serif;
+        font-size: 32px;
+        background: linear-gradient(135deg, #fde68a, #f59e0b);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 8px 0;
+      }
+
+      .stats-summary-row {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+
+      .score-pill {
+        background: rgba(251, 191, 36, 0.15);
+        border: 1.5px solid var(--gold);
+        color: #fde047;
+        font-size: 20px;
+        font-weight: 800;
+        padding: 10px 24px;
+        border-radius: 99px;
+      }
+
+      .end-desc {
+        font-size: 16px;
+        color: #cbd5e1;
+        max-width: 520px;
+        margin: 0 auto 28px auto;
+        line-height: 1.6;
+      }
+
+      @keyframes popIn {
+        0% { transform: scale(0.7); }
+        100% { transform: scale(1); }
+      }
+
+      @keyframes fadeSlide {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+      }
+
+      @media (max-width: 680px) {
+        .options-layout {
+          grid-template-columns: 1fr;
+        }
+        .question-row {
+          flex-direction: column;
+        }
+        .mentor-footer {
+          flex-direction: column;
+          text-align: center;
+        }
+        .shortcut-hint {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="confetti-canvas"></canvas>
+
+    <div class="arena-frame">
+      <!-- Header -->
+      <div class="arena-header">
+        <div class="brand-title">🏮 ĐẤU TRƯỜNG TIẾNG VIỆT</div>
+        <div class="status-group">
+          <div class="stat-pill combo-pill" id="combo-badge">
+            🔥 Chuỗi <span id="combo-count">0</span>
+          </div>
+          <div class="stat-pill">
+            ⭐ <span id="star-score">0</span> điểm
+          </div>
+          <button
+            class="icon-circle-btn"
+            id="mute-btn"
+            onclick="toggleAudio()"
+            title="Bật/Tắt âm thanh"
+          >
+            🔊
+          </button>
+        </div>
+      </div>
+
+      <!-- Thanh tiến trình -->
+      <div class="progress-wrap">
+        <span class="step-counter-text" id="progress-label">Câu 1 / 10</span>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+        <span>🏆</span>
+      </div>
+
+      <!-- Khu vực giải đố -->
+      <div class="main-board" id="game-board">
+        <div class="meta-row">
+          <div class="topic-tag" id="skill-tag">🧩 Giải Đố Chữ</div>
+          <span class="shortcut-hint">Phím tắt: 1, 2, 3 để chọn • Enter để tiếp tục</span>
+        </div>
+
+        <div class="question-row">
+          <h2 class="q-heading" id="q-prompt">Đang tải câu đố...</h2>
+          <button class="speak-btn" onclick="speakCurrentPrompt()">
+            🗣️ Đọc câu đố
+          </button>
+        </div>
+
+        <div class="illustration-card" id="visual-card"></div>
+
+        <div class="options-layout" id="options-grid"></div>
+
+        <div class="mentor-footer">
+          <div class="mentor-talk">
+            <span class="mentor-icon" id="mentor-emoji">🎓</span>
+            <span id="mentor-message">
+              Chọn đáp án chính xác nhất để ghi điểm và tích lũy chuỗi Combo nhé!
+            </span>
+          </div>
+          <button
+            class="continue-btn"
+            id="next-q-btn"
+            onclick="goNextQuestion()"
+          >
+            Câu tiếp theo ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- Màn hình kết thúc -->
+      <div class="end-screen" id="summary-board">
+        <div class="trophy-big">👑</div>
+        <h2 class="end-heading" id="rank-title">TRẠNG NGUYÊN TIẾNG VIỆT!</h2>
+        <div class="stats-summary-row">
+          <div class="score-pill" id="final-stars">⭐ 100 Điểm</div>
+          <div class="score-pill" id="final-correct">🎯 Đúng 10 / 10</div>
+        </div>
+        <p class="end-desc" id="final-message"></p>
+        <button
+          class="continue-btn"
+          style="display: inline-block"
+          onclick="restartAdventure()"
+        >
+          Chinh Phục Lại 🔄
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let audioOn = true;
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+      function beep(freq, type, dur, delay = 0) {
+        if (!audioOn) return;
+        if (ctx.state === "suspended") ctx.resume();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        g.gain.setValueAtTime(0.09, ctx.currentTime + delay);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + dur);
+        o.connect(g);
+        g.connect(ctx.destination);
+        o.start(ctx.currentTime + delay);
+        o.stop(ctx.currentTime + delay + dur);
+      }
+
+      function playWinSound() {
+        beep(523.25, "sine", 0.12, 0);
+        beep(659.25, "sine", 0.12, 0.09);
+        beep(783.99, "sine", 0.14, 0.18);
+        beep(1046.5, "sine", 0.25, 0.27);
+      }
+
+      function playLoseSound() {
+        beep(240, "triangle", 0.18, 0);
+        beep(190, "triangle", 0.24, 0.14);
+      }
+
+      function speakVietnamese(text) {
+        if (!audioOn || !("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "vi-VN";
+        utter.rate = 0.98;
+        window.speechSynthesis.speak(utter);
+      }
+
+      function toggleAudio() {
+        audioOn = !audioOn;
+        document.getElementById("mute-btn").innerText = audioOn ? "🔊" : "🔇";
+        if (!audioOn && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+      }
+
+      // Bộ 10 câu Giải Đố Tiếng Việt (giữ kiến trúc 4 dạng hiển thị trực quan)
+      const vietnameseRiddles = [
+        {
+          tag: "🏮 Đố Mẹo Dân Gian",
+          prompt: "Cây gì không lá không hoa, sáng đêm tỏa sáng khắp nhà gần xa?",
+          speech: "Cây gì không lá không hoa, sáng đêm tỏa sáng khắp nhà gần xa?",
+          type: "riddle-poem",
+          emoji: "💡",
+          poem: "“Cây gì không lá không hoa,<br/>Ban đêm tỏa sáng khắp nhà gần xa?”",
+          options: [
+            { main: "Cây đèn", hint: "Đồ vật thắp sáng" },
+            { main: "Cây tre", hint: "Loài cây ngoài vườn" },
+            { main: "Cây nêu", hint: "Cây ngày Tết" },
+          ],
+          correct: 0,
+          explain: "Chính xác! Đó là 'cây đèn' (đèn dầu, đèn điện).",
+        },
+        {
+          tag: "🔤 Đố Chữ Khuyết",
+          prompt: "Điền chữ còn thiếu để hoàn thiện câu thành ngữ quen thuộc:",
+          speech: "Điền chữ còn thiếu: Uống nước nhớ nguồn",
+          type: "fill-letter",
+          emoji: "💧",
+          tiles: ["Uống", "nước", "nhớ", "?"],
+          revealValue: "nguồn",
+          options: [
+            { main: "nguồn", hint: "Cội nguồn, gốc rễ" },
+            { main: "sông", hint: "Dòng sông" },
+            { main: "biển", hint: "Biển cả" },
+          ],
+          correct: 0,
+          explain: "Chuẩn xác! 'Uống nước nhớ nguồn' khuyên răn lòng biết ơn.",
+        },
+        {
+          tag: "🔗 Vua Nối Từ",
+          prompt: "Tìm từ thích hợp nối tiếp sau tiếng 'tinh' để tạo từ có nghĩa:",
+          speech: "Tìm từ thích hợp nối tiếp sau tiếng tinh: Tinh gì?",
+          type: "rhyme",
+          left: "Tinh",
+          right: "❓",
+          revealValue: "tú",
+          options: [
+            { main: "tú", hint: "Tinh tú (các vì sao)" },
+            { main: "mơ", hint: "Không tạo từ ghép hợp lý" },
+            { main: "bàn", hint: "Không tạo từ ghép hợp lý" },
+          ],
+          correct: 0,
+          explain: "Tuyệt vời! 'Tinh tú' nghĩa là các ngôi sao trên bầu trời.",
+        },
+        {
+          tag: "✍️ Bắt Lỗi Chính Tả",
+          prompt: "Từ nào dưới đây viết ĐÚNG chính tả Tiếng Việt?",
+          speech: "Từ nào dưới đây viết đúng chính tả Tiếng Việt?",
+          type: "picture-only",
+          emoji: "📝",
+          subText: "Thử thách phân biệt phụ âm đầu & thanh điệu",
+          options: [
+            { main: "Sáng sủa", hint: "Chữ s - dấu hỏi" },
+            { main: "Xáng xủa", hint: "Sai phụ âm đầu" },
+            { main: "Sáng xủa", hint: "Sai tiếng thứ hai" },
+          ],
+          correct: 0,
+          explain: "Chính xác! 'Sáng sủa' đều dùng phụ âm đầu 's' và thanh hỏi.",
+        },
+        {
+          tag: "🧩 Đố Chữ Chiết Tự",
+          prompt: "Bỏ dấu sắc thành loài cá, giữ nguyên dấu sắc ở trên bầu trời. Là chữ gì?",
+          speech: "Bỏ dấu sắc thành loài cá, giữ nguyên dấu sắc ở trên bầu trời. Là chữ gì?",
+          type: "riddle-poem",
+          emoji: "☁️",
+          poem: "“Để nguyên lơ lửng trên trời,<br/>Bỏ sắc thành cá bơi lội dưới ao.”",
+          options: [
+            { main: "Mây / Mấy", hint: "Chưa đúng nghĩa loài cá" },
+            { main: "Trăng / Trắng", hint: "Chưa đúng nghĩa loài cá" },
+            { main: "Nắng / Năng", hint: "Gần đúng nhưng chưa phải cá" },
+          ],
+          // Thay bằng câu chiết tự chuẩn xác 100%:
+          correct: 0,
+          explain: "Mẹo nhỏ: Nếu là 'Sáo' bỏ sắc thành 'Sao', còn ở đây đáp án đúng là chữ 'Mây'!",
+        },
+        {
+          tag: "🔄 Tìm Từ Trái Nghĩa",
+          prompt: "Từ nào TRÁI NGHĨA với từ 'Khiêm tốn'?",
+          speech: "Từ nào trái nghĩa với từ Khiêm tốn?",
+          type: "rhyme",
+          left: "Khiêm tốn",
+          right: "⚡ Trái nghĩa",
+          revealValue: "Kiêu ngạo",
+          options: [
+            { main: "Kiêu ngạo", hint: "Tự cao tự đại" },
+            { main: "Lễ phép", hint: "Từ tích cực" },
+            { main: "Giản dị", hint: "Từ gần nét nghĩa tốt" },
+          ],
+          correct: 0,
+          explain: "Chính xác! Trái ngược với 'khiêm tốn' là 'kiêu ngạo'.",
+        },
+        {
+          tag: "📜 Xếp Chữ Thành Tục Ngữ",
+          prompt: "Sắp xếp các cụm từ sau thành câu tục ngữ đúng:",
+          speech: "Sắp xếp các cụm từ: Học thầy, tày, không, học bạn",
+          type: "sentence",
+          words: ["không tày", "Học thầy", "học bạn"],
+          options: [
+            { main: "Học thầy không tày học bạn", hint: "Đề cao việc học hỏi bạn bè" },
+            { main: "Học bạn không tày học thầy", hint: "Ngược trật tự tục ngữ" },
+            { main: "Không tày học thầy học bạn", hint: "Sai cấu trúc câu" },
+          ],
+          correct: 0,
+          explain: "Chuẩn xác! 'Học thầy không tày học bạn'.",
+        },
+        {
+          tag: "🔤 Đố Chữ Chiết Tự",
+          prompt: "Chữ gì để nguyên là quả ngọt, thêm huyền thành chỗ nằm êm?",
+          speech: "Chữ gì để nguyên là quả ngọt, thêm huyền thành chỗ nằm êm?",
+          type: "fill-letter",
+          emoji: "🛏️",
+          tiles: ["Q", "u", "ả", "?", "→", "G", "i", "ư", "ờ", "n", "g"],
+          revealValue: "Mơ",
+          options: [
+            { main: "Mơ (Mơ / Mờ)", hint: "Quả mơ" },
+            { main: "Na (Na / Nà)", hint: "Quả na" },
+            { main: "Lê (Lê / Lề)", hint: "Quả lê" },
+          ],
+          correct: 0,
+          explain: "Hay lắm! Quả mơ — thêm huyền thành mờ sương, giấc mơ êm đềm.",
+        },
+        {
+          tag: "🎭 Giải Nghĩa Thành Ngữ",
+          prompt: "Thành ngữ 'Nước đổ đầu vịt' dùng để chỉ điều gì?",
+          speech: "Thành ngữ Nước đổ đầu vịt dùng để chỉ điều gì?",
+          type: "picture-only",
+          emoji: "🦆",
+          subText: "“Nói mãi mà chẳng chịu tiếp thu chút nào...”",
+          options: [
+            { main: "Nói mà không tiếp thu", hint: "Khuyên bảo vô ích" },
+            { main: "Trời mưa rất to", hint: "Nghĩa đen của từ" },
+            { main: "Người bơi lội giỏi", hint: "Không đúng nghĩa bóng" },
+          ],
+          correct: 0,
+          explain: "Chính xác! 'Nước đổ đầu vịt' chỉ việc khuyên nhủ nhưng người nghe bỏ ngoài tai.",
+        },
+        {
+          tag: "👑 Thử Thách Về Đích",
+          prompt: "Điền từ Hán Việt thích hợp: 'Bách chiến bách ...'",
+          speech: "Điền từ Hán Việt thích hợp: Bách chiến bách gì?",
+          type: "fill-letter",
+          emoji: "🚩",
+          tiles: ["Bách", "chiến", "bách", "?"],
+          revealValue: "thắng",
+          options: [
+            { main: "thắng", hint: "Trăm trận trăm thắng" },
+            { main: "bại", hint: "Trăm trận trăm thua" },
+            { main: "niên", hint: "Trăm năm" },
+          ],
+          correct: 0,
+          explain: "Xuất sắc! 'Bách chiến bách thắng' nghĩa là đánh trăm trận thắng cả trăm!",
+        },
+      ];
+
+      // Thay câu 5 bằng câu chiết tự chuẩn vần thanh điệu không gây tranh cãi
+      vietnameseRiddles[4] = {
+        tag: "🧩 Đố Chữ Chiết Tự",
+        prompt: "Để nguyên là tên một loài chim, thêm dấu huyền thành đồ dùng để quét nhà?",
+        speech: "Để nguyên là tên một loài chim, thêm dấu huyền thành đồ dùng để quét nhà?",
+        type: "riddle-poem",
+        emoji: "🧹",
+        poem: "“Để nguyên bay lượn trên trời,<br/>Thêm huyền quét sạch mọi nơi trong nhà.”",
+        options: [
+          { main: "Chổi (Chọi / Chổi)", hint: "Sai thanh điệu" },
+          { main: "Sáo (Sáo / Sào)", hint: "Chim sáo & cây sào" },
+          { main: "Quạ (Quạ / Quà)", hint: "Chim quạ & món quà" },
+        ],
+        correct: 1,
+        explain: "Chuẩn xác! Chim 'sáo' thêm dấu huyền thành cây 'sào' (hoặc Quạ -> Quà).",
+      };
+
+      let stepIndex = 0;
+      let score = 0;
+      let correctCount = 0;
+      let streak = 0;
+      let isAnswered = false;
+
+      function renderQuiz() {
+        isAnswered = false;
+        const item = vietnameseRiddles[stepIndex];
+        document.getElementById("progress-label").innerText =
+          `Câu ${stepIndex + 1} / ${vietnameseRiddles.length}`;
+        document.getElementById("progress-fill").style.width =
+          `${(stepIndex / vietnameseRiddles.length) * 100}%`;
+
+        document.getElementById("skill-tag").innerText = item.tag;
+        document.getElementById("q-prompt").innerText = item.prompt;
+
+        const visualBox = document.getElementById("visual-card");
+        visualBox.innerHTML = "";
+
+        if (item.type === "fill-letter") {
+          const wrap = document.createElement("div");
+          wrap.className = "picture-word-box";
+          wrap.innerHTML = `<div class="big-emoji">${item.emoji}</div>`;
+          const slots = document.createElement("div");
+          slots.className = "letter-slots";
+          item.tiles.forEach((ch) => {
+            const tile = document.createElement("div");
+            if (ch === "?") {
+              tile.className = "char-tile blank";
+              tile.id = "blank-slot";
+            } else {
+              tile.className = "char-tile";
+            }
+            tile.innerText = ch;
+            slots.appendChild(tile);
+          });
+          wrap.appendChild(slots);
+          visualBox.appendChild(wrap);
+        } else if (item.type === "rhyme") {
+          visualBox.innerHTML = `
+            <div class="rhyme-equation">
+              <div class="syllable-pill">${item.left}</div>
+              <span>➕</span>
+              <div class="syllable-result" id="blank-slot">${item.right}</div>
+            </div>
+          `;
+        } else if (item.type === "sentence") {
+          const box = document.createElement("div");
+          box.className = "sentence-blocks";
+          item.words.forEach((w) => {
+            const chip = document.createElement("div");
+            chip.className = "word-chip";
+            chip.innerText = w;
+            box.appendChild(chip);
+          });
+          visualBox.appendChild(box);
+        } else if (item.type === "riddle-poem") {
+          visualBox.innerHTML = `
+            <div class="picture-word-box">
+              <div class="big-emoji">${item.emoji}</div>
+              <div class="riddle-poem">${item.poem}</div>
+            </div>
+          `;
+        } else {
+          visualBox.innerHTML = `
+            <div class="picture-word-box">
+              <div class="big-emoji">${item.emoji}</div>
+              <div style="font-size: 16px; font-weight: 600; color: #cbd5e1; text-align: center;">${item.subText}</div>
+            </div>
+          `;
+        }
+
+        const optGrid = document.getElementById("options-grid");
+        optGrid.innerHTML = "";
+        item.options.forEach((opt, i) => {
+          const btn = document.createElement("button");
+          btn.className = "ans-tile";
+          btn.innerHTML = `
+            <span class="key-badge">${i + 1}</span>
+            <span class="ans-main">${opt.main}</span>
+            <span class="ans-hint">${opt.hint}</span>
+          `;
+          btn.onclick = () => checkChoice(i, btn);
+          optGrid.appendChild(btn);
+        });
+
+        document.getElementById("mentor-emoji").innerText = "🎓";
+        document.getElementById("mentor-message").innerText =
+          "Đọc kỹ gợi ý trên bảng và chọn đáp án đúng nhất nhé!";
+        document.getElementById("next-q-btn").style.display = "none";
+      }
+
+      function speakCurrentPrompt() {
+        const item = vietnameseRiddles[stepIndex];
+        speakVietnamese(item.speech || item.prompt);
+      }
+
+      function updateComboUI() {
+        const badge = document.getElementById("combo-badge");
+        if (streak >= 2) {
+          badge.classList.add("active");
+          document.getElementById("combo-count").innerText = streak;
+        } else {
+          badge.classList.remove("active");
+        }
+      }
+
+      function checkChoice(idx, btn) {
+        if (isAnswered) return;
+        isAnswered = true;
+
+        const item = vietnameseRiddles[stepIndex];
+        const buttons = document.querySelectorAll(".ans-tile");
+        buttons.forEach((b) => (b.disabled = true));
+
+        // Lật mở ô trống trực quan nếu có
+        const blankEl = document.getElementById("blank-slot");
+        if (blankEl && item.revealValue) {
+          blankEl.innerText = item.revealValue;
+          blankEl.classList.add("revealed");
+        }
+
+        if (idx === item.correct) {
+          playWinSound();
+          btn.classList.add("correct");
+          correctCount++;
+          streak++;
+          const bonus = streak >= 2 ? (streak - 1) * 2 : 0;
+          score += 10 + bonus;
+
+          document.getElementById("star-score").innerText = score;
+          updateComboUI();
+
+          const bonusText = bonus > 0 ? ` (+${bonus} điểm Combo 🔥)` : "";
+          document.getElementById("mentor-emoji").innerText = "✨";
+          document.getElementById("mentor-message").innerText =
+            `Chính xác!${bonusText} ${item.explain}`;
+          speakVietnamese("Chính xác! " + item.explain);
+        } else {
+          playLoseSound();
+          streak = 0;
+          updateComboUI();
+          btn.classList.add("wrong");
+          buttons[item.correct].classList.add("correct");
+          document.getElementById("mentor-emoji").innerText = "💡";
+          document.getElementById("mentor-message").innerText =
+            `Chưa đúng rồi! ${item.explain}`;
+          speakVietnamese("Chưa đúng rồi. " + item.explain);
+        }
+
+        document.getElementById("progress-fill").style.width =
+          `${((stepIndex + 1) / vietnameseRiddles.length) * 100}%`;
+        const nextBtn = document.getElementById("next-q-btn");
+        nextBtn.innerText =
+          stepIndex === vietnameseRiddles.length - 1
+            ? "Xem Kết Quả 🏆"
+            : "Câu tiếp theo ➔";
+        nextBtn.style.display = "inline-block";
+      }
+
+      function goNextQuestion() {
+        stepIndex++;
+        if (stepIndex < vietnameseRiddles.length) {
+          renderQuiz();
+        } else {
+          showFinalResult();
+        }
+      }
+
+      function showFinalResult() {
+        playWinSound();
+        launchConfetti();
+        document.getElementById("game-board").style.display = "none";
+        document.getElementById("summary-board").style.display = "block";
+        document.getElementById("final-stars").innerText = `⭐ ${score} Điểm`;
+        document.getElementById("final-correct").innerText =
+          `🎯 Đúng ${correctCount} / ${vietnameseRiddles.length}`;
+
+        const rankEl = document.getElementById("rank-title");
+        const msgEl = document.getElementById("final-message");
+
+        if (correctCount >= 9) {
+          rankEl.innerText = "TRẠNG NGUYÊN TIẾNG VIỆT!";
+          msgEl.innerText =
+            "Vốn từ vựng, thành ngữ và khả năng suy luận chữ nghĩa của bạn thực sự đỉnh cao!";
+        } else if (correctCount >= 6) {
+          rankEl.innerText = "BẢNG NHÃN THÔNG THÁI!";
+          msgEl.innerText =
+            "Thành tích rất ấn tượng! Chỉ còn một chút nữa là chạm tới ngôi vị Trạng Nguyên rồi.";
+        } else {
+          rankEl.innerText = "SĨ TỬ TRIỂN VỌNG!";
+          msgEl.innerText =
+            "Tiếng Việt giàu và đẹp lắm! Hãy thử thách lại một lượt nữa để bứt phá điểm số nhé!";
+        }
+      }
+
+      function restartAdventure() {
+        stepIndex = 0;
+        score = 0;
+        correctCount = 0;
+        streak = 0;
+        document.getElementById("star-score").innerText = "0";
+        updateComboUI();
+        document.getElementById("game-board").style.display = "block";
+        document.getElementById("summary-board").style.display = "none";
+        renderQuiz();
+      }
+
+      // Hỗ trợ phím tắt 1, 2, 3 và Enter
+      document.addEventListener("keydown", (e) => {
+        if (document.getElementById("game-board").style.display === "none") return;
+        if (!isAnswered && ["1", "2", "3"].includes(e.key)) {
+          const idx = parseInt(e.key, 10) - 1;
+          const buttons = document.querySelectorAll(".ans-tile");
+          if (buttons[idx]) buttons[idx].click();
+        } else if (isAnswered && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          goNextQuestion();
+        }
+      });
+
+      // Hiệu ứng pháo giấy ăn mừng
+      function launchConfetti() {
+        const canvas = document.getElementById("confetti-canvas");
+        const c = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const colors = ["#fbbf24", "#38bdf8", "#10b981", "#f43f5e", "#a855f7"];
+        const pieces = Array.from({ length: 90 }, () => ({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * 4 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          tilt: Math.random() * 10 - 5,
+        }));
+
+        let frame = 0;
+        function draw() {
+          c.clearRect(0, 0, canvas.width, canvas.height);
+          pieces.forEach((p) => {
+            c.fillStyle = p.color;
+            c.fillRect(p.x, p.y, p.r, p.r * 1.6);
+            p.y += p.d;
+            p.x += Math.sin(frame * 0.05 + p.tilt);
+          });
+          frame++;
+          if (frame < 160) requestAnimationFrame(draw);
+          else c.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        draw();
+      }
+
+      renderQuiz();
+    </script>
+  </body>
+</html>
